@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# @Author:  cytopia <cytopia@everythingcli.org>
+# @GPG Key: 0xA02C56F0
+# @Date:    2017-03-20
+# @Version: v0.1
+
+MY_NAME="$(basename "$(test -L "$0" && readlink "$0" || echo "$0")")"
+MY_DDIR="${HOME}/.config/lsl"
+MY_LABEL="${MY_DDIR}/label.lbl"
+MY_STORE="${MY_DDIR}/store.lbl"
+
+
+run_help() {
+	echo "Usage: ${MY_NAME} add <label> /path/to/file"
+	echo
+	echo "  add <lbl> <f>   Attach a label to a file or directory."
+}
+
+run() {
+	if [ "${#}" != "2" ]; then
+		echo "Error, invalid number of arguments"
+		exit 1
+	fi
+	add "${1}" "${2}"
+	exit $?
+}
+
+
+###
+### list available labels (-l)
+###
+add() {
+	local name="${1}"
+	local path="${2}"
+	#$( echo "${2}" | sed 's:/*$::' )"
+	local line
+	local color
+
+	# retrieve absolute path
+	path="$(cd "$(dirname "${path}")"; pwd)/$(basename "${path}")"
+
+	# Label exists?
+	if ! grep -q "^${name}:::::" "${MY_LABEL}"; then
+		echo "Label '${name}' does not exist."
+		echo "Use: $ lbl admin -a '${name}' to add it first".
+		return 1
+	fi
+	# Path exist?
+	if [ ! -f "${path}" ] && [ ! -d "${path}" ]; then
+		echo "File or directory does not exist: ${path}"
+		return 1
+	fi
+	# Label already attached?
+	if grep -q "^${path}:::::${name}:::::" "${MY_STORE}"; then
+		echo "'${name}' already exists for ${path}"
+		return 1
+	fi
+
+	line="$( grep "^${name}:::::" "${MY_LABEL}" )"
+	color="$( echo "${line}" | awk -F ':::::' '{print $2}' )"
+	echo "${path}:::::${name}:::::${color}:::::$(date '+%Y-%M-%d'):::::0000-00-00" >> "${MY_STORE}"
+
+}
+

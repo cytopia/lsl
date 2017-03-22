@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# @Author:  cytopia <cytopia@everythingcli.org>
+# @GPG Key: 0xA02C56F0
+# @Date:    2017-03-20
+# @Version: v0.1
+
+MY_NAME="$(basename "$(test -L "$0" && readlink "$0" || echo "$0")")"
+MY_DDIR="${HOME}/.config/lsl"
+MY_LABEL="${MY_DDIR}/label.lbl"
+MY_STORE="${MY_DDIR}/store.lbl"
+
+
+run_help() {
+	echo "Not yet implemented"
+}
+
+run() {
+	echo "Not yet implemented"
+}

@@ -1,0 +1,271 @@
+#!/usr/bin/env bash
+# @Author:  cytopia <cytopia@everythingcli.org>
+# @GPG Key: 0xA02C56F0
+# @Date:    2017-03-20
+# @Version: v0.1
+
+MY_NAME="$(basename "$(test -L "$0" && readlink "$0" || echo "$0")")"
+MY_DDIR="${HOME}/.config/lsl"
+MY_LABEL="${MY_DDIR}/label.lbl"
+MY_STORE="${MY_DDIR}/store.lbl"
+
+
+run_help() {
+	echo "Usage: ${MY_NAME} admin -ladrvfh"
+	echo
+	echo "  -l              list your labels."
+	echo "                  You can also filter by names..."
+	echo "                  Just kidding, use 'grep' you lazy bastard ;-)"
+	echo "  -a [<name>]     add a new label. If name is omitted"
+	echo "                  you can add it interactively."
+	echo "  -d [<name>]     delete label by name. If name is omitted"
+	echo "                  you can delete it interactively."
+	echo "                  Deleting a label will also delete all file"
+	echo "                  associations for that label."
+	echo "  -r <from> <to>  rename label"
+	echo "                  Renaming a label will also rename it for"
+	echo "                  all file associations for that label."
+	echo "  -c [<name>]     change label color. If name is omitted"
+	echo "                  you can change the color interactively."
+	echo "                  Changing the labels color will also change"
+	echo "                  the color for all file associations for that"
+	echo "                  label."
+	echo "  -v              validate label db"
+	echo "  -f              fix label db"
+	echo "  -h              show this help"
+
+}
+
+run() {
+	case "${1}" in
+		-l)
+			if [ "${#}" != "1" ]; then
+				echo "Error, invalid number of arguments"
+				exit 1
+			fi
+			admin_list
+			exit $?
+			;;
+		-a)
+			if [ "${#}" != "1" ] && [ "${#}" != "2" ]; then
+				echo "Error, invalid number of arguments"
+				exit 1
+			fi
+			if [ "${#}" == "2" ]; then
+				admin_add "${2}"
+			else
+				admin_add ""
+			fi
+			exit $?
+			;;
+		-d)
+			if [ "${#}" != "1" ] && [ "${#}" != "2" ]; then
+				echo "Error, invalid number of arguments"
+				exit 1
+			fi
+			if [ "${#}" == "2" ]; then
+				admin_del "${2}"
+			else
+				admin_del ""
+			fi
+			exit $?
+			;;
+		-r)
+			if [ "${#}" != "3" ]; then
+				echo "Error, invalid number of arguments"
+				exit 1
+			fi
+			admin_ren "${2}" "${3}"
+			exit $?
+			;;
+		-c)
+			if [ "${#}" != "1" ] && [ "${#}" != "2" ]; then
+				echo "Error, invalid number of arguments"
+				exit 1
+			fi
+			if [ "${#}" == "2" ]; then
+				admin_chg_clr "${2}"
+			else
+				admin_chg_clr ""
+			fi
+			exit $?
+			;;
+		-v)
+			if [ "${#}" != "1" ]; then
+				echo "Error, invalid number of arguments"
+				exit 1
+			fi
+			admin_validate
+			exit $?
+			;;
+		-f)
+			if [ "${#}" != "1" ]; then
+				echo "Error, invalid number of arguments"
+				exit 1
+			fi
+			admin_fix
+			exit $?
+			;;
+		*)
+			echo "Invalid command, type ${MY_NAME} -h for help."
+			exit 1
+	esac
+}
+
+
+###
+### list available labels (-l)
+###
+admin_list() {
+	local label
+	local color
+	local count
+	local i=0
+
+		#printf "%2s" "${i}"
+	printf " %-3s%-9s%s\n" "#" "in use" "label"
+	printf "%s\n" "--------------------------------------------------"
+	while read line; do
+		i=$(( i + 1))
+		label="$( echo "$line" | awk -F ':::::' '{print $1}' )"
+		color="$( echo "$line" | awk -F ':::::' '{print $2}' )"
+		count="$( grep -cE "^/.+:::::${label}:::::" "${MY_STORE}" )"
+
+		printf "%2s%5s      \\${color}[ %s ]\\e[0m\n" "${i}" "${count}" "${label}"
+	done < "${MY_LABEL}"
+}
+
+###
+### add label (-a <name>)
+###
+g_color=""
+g_name=""
+admin_add() {
+	# http://misc.flogisoft.com/bash/tip_colors_and_formatting
+	local name="${1}"
+	local bgcolor=()
+	local fgcolor=()
+	local i
+
+	# Interactively choose the name
+	if [ "${name}" == "" ]; then
+		choose_name 'g_name'
+		name="${g_name}"
+	else
+		if grep -q "^${name}:::::" "${MY_LABEL}"; then
+			echo "Label '${name}' already exists"
+			return 1
+		fi
+	fi
+
+
+
+	# get color by user input
+	# Note: 1st param must be name of global variable
+	choose_color 'g_color' "${name}"
+
+	echo "${name}:::::${g_color}" >> "${MY_LABEL}"
+
+	echo
+	echo -ne "Added Label: ${g_color}[ ${name} ]\e[0m"
+	echo
+
+}
+admin_del() {
+	echo "Not implemented ^_^"
+}
+admin_ren() {
+	local name="${1}"
+	echo "Not implemented ^_^"
+}
+admin_chg_clr() {
+	echo "Not implemented ^_^"
+}
+admin_validate() {
+	echo "Not implemented ^_^"
+}
+admin_fix() {
+	echo "Not implemented ^_^"
+}
+
+
+
+
+choose_name() {
+	local __resultvar="${1}"
+	local __name
+
+	# Interactively choose the name
+	while true; do
+		printf "Enter a label name: "
+		read __name </dev/tty
+		if grep -q "^${__name}:::::" "${MY_LABEL}"; then
+			echo "Label '${__name}' already exists"
+		elif [ "${__name}" == "" ]; then
+			echo "Label name must not be empty"
+		else
+			break
+		fi
+	done
+	# Set global variable
+	eval $__resultvar="'${__name}'"
+}
+
+
+
+
+
+choose_color() {
+	# http://misc.flogisoft.com/bash/tip_colors_and_formatting
+	local __resultvar="${1}"
+	local name="${2}"
+	local bgcolor=()
+	local fgcolor=()
+	local i
+
+	# BG color: display
+	i=0
+	echo "Select labels background color:"
+	for clbg in {40..47} {100..107} 49 ; do
+		bgcolor+=("${clbg}")
+		printf "%2s" "${i}"
+		echo -en "  \e[0;${clbg};30m[ ${name} ]\e[0m"
+		echo #Newline
+		i=$(( i + 1 ))
+	done
+	# BG color: user input
+	while true; do
+		printf "Enter your choice: "
+		read ibg </dev/tty
+		if [[ ${ibg} == [0-9]* ]]; then
+			if [ ${ibg} -ge 0 ] && [ ${ibg} -lt "${i}" ]; then
+				break
+			fi
+		fi
+	done
+
+	# FG color: display
+	i=0
+	echo "Select labels foreground color:"
+	for clfg in {30..37} {90..97} 39 ; do
+		fgcolor+=("${clfg}")
+		printf "%2s" "${i}"
+		echo -en "  \e[0;${bgcolor[$ibg]};${clfg}m[ ${name} ]\e[0m"
+		echo #Newline
+		i=$(( i + 1 ))
+	done
+	# FG color: user input
+	while true; do
+		printf "Enter your choice: "
+		read ifg </dev/tty
+		if [[ ${ifg} == [0-9]* ]]; then
+			if [ ${ifg} -ge 0 ] && [ ${ifg} -lt "${i}" ]; then
+				break
+			fi
+		fi
+	done
+
+	# Set global variable
+	eval $__resultvar="'\\e[0;${bgcolor[$ibg]};${fgcolor[$ifg]}m'"
+}
+

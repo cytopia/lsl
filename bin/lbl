@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+# @Author:  cytopia <cytopia@everythingcli.org>
+# @GPG Key: 0xA02C56F0
+# @Date:    2017-03-20
+# @Version: v0.1
+
+MY_NAME="$(basename "$(test -L "$0" && readlink "$0" || echo "$0")")"
+#MY_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+MY_DDIR="${HOME}/.config/lsl"
+MY_LABEL="${MY_DDIR}/label.lbl"
+MY_STORE="${MY_DDIR}/store.lbl"
+
+
+###
+### Variables
+####
+MY_NAME="lbl"
+MY_VERSION="v0.1"
+MY_AUTHOR="cytopia"
+
+PATH_MOD="mod"
+
+
+
+if [ ! -d "${MY_DDIR}" ]; then
+	mkdir -p "${MY_DDIR}" >/dev/null
+fi
+if [ ! -f "${MY_LABEL}" ]; then
+	touch "${MY_LABEL}"
+fi
+if [ ! -f "${MY_STORE}" ]; then
+	touch "${MY_STORE}"
+fi
+
+
+
+
+###
+### Print usage
+###
+print_usage() {
+	echo "${MY_NAME} ${MY_VERSION} (${MY_AUTHOR})"
+	echo "Usage: ${MY_NAME} <module> <args>"
+	echo "       ${MY_NAME} -v"
+	echo "       ${MY_NAME} -h"
+	echo
+	echo "${MY_NAME} -v            Show this help screen"
+	echo "${MY_NAME} <module> -h   Show module help screen"
+	echo
+	echo "Available Modules:"
+	for f in "${PATH_MOD}"/*; do
+		if [ -f "${f}" ]; then
+			echo "  $(basename "$f")"
+		fi
+	done
+}
+
+###
+### Print version info
+###
+print_version() {
+	echo "version"
+}
+
+###
+### Validate Call
+###
+if [ "${#}" -lt "1" ]; then
+	echo "Error, must specify arguments"
+	echo "Need help: ${MY_NAME} -h"
+	exit 1
+fi
+
+###
+### Help or version?
+###
+if [ "${1}" == "-v" ]; then
+	print_version
+	exit 0
+elif [ "${1}" == "-h" ]; then
+	print_usage
+	exit 0
+elif [[ "${1}" == "-"* ]]; then
+	echo "Error, invalid argument: ${1}"
+	echo "Need help: ${MY_NAME} -h"
+	exit 1
+fi
+
+###
+### Pass call to submodules
+###
+for mod in "${PATH_MOD}"/*; do
+	if [ -f "${mod}" ]; then
+		mod="$(basename "${mod}")"
+		if [ "$1" == "$mod" ]; then
+			. ${PATH_MOD}/${mod}
+			if [ "${2}" == "-h" ]; then
+				run_help "${@:2}"
+				exit 0
+			else
+				run "${@:2}"
+				exit $?
+			fi
+		fi
+	fi
+done
+
+###
+### If script still running, show mod not found
+###
+echo "Error, Module $1 not found."
+echo
+print_usage
+exit 1
