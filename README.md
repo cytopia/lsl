@@ -27,6 +27,15 @@ This is a proof-of-concept and still a work-in-progress project. Please do test 
 
 ---
 
+Installation
+------------
+```shell
+$ ./configure [--prefix=/usr/local]
+$ make
+$ sudo make install
+```
+
+
 Quickstart
 ----------
 
@@ -74,6 +83,9 @@ Database files
 * `label.lbl`: Text file defines the labels and their colors
 * `store.lbl`: Text file which holds the relation between files and labels
 
+Bash completion
+* `lbl`:  Bash/ZSH completion for the Label manager
+
 If you don't have python installed, use the bash wrapper. However the bash version is notably slower (>10x) when showing folders with lots of files. So I recommend you stick to the python version.
 
 
@@ -90,12 +102,11 @@ $ lsl.py ~/.config --color=always --group-directories-first -al
 
 For your convenience, I suggest creating a bash/zsh alias. A few examples:
 ```shell
-# via ll
-alias ll='/path/to/lsl.py -l --color=always --group-directories-first'
-# or la (including hidden files)
-alias la='/path/to/lsl.py -la --color=always --group-directories-first'
-# or via lsl
-alias lsl='/path/to/lsl.py -l --color=always --group-directories-first'
+# Add this to you bash/zsh config file:
+alias lsl='lsl.py -l'
+
+# You can also add your favorite ls arguments
+alias lsl='lsl.py -l --color=always --group-directories-first'
 ```
 
 
@@ -124,6 +135,13 @@ such as: by name, by regex, by path and by created and modified date.
 
 See **[Label Manager Usage](doc/LABEL_MANAGER.md)** for complete set of commands.
 
+
+Bash/ZSH completion
+-------------------
+
+If you are as lazy as I am, you probably do not always want to type the full commands, but rather tab-complete for quicker results.
+
+The label manager comes with bash completion for all its arguments, just as you are used from git for example.
 
 
 Technical info
